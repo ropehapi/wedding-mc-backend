@@ -90,6 +90,12 @@ func (r *guestRepo) FindByAccessCode(ctx context.Context, weddingID, accessCode 
 	return &g, nil
 }
 
+func (r *guestRepo) UpdateTableID(ctx context.Context, guestID string, tableID *string) error {
+	query := `UPDATE guests SET table_id = $1, updated_at = NOW() WHERE id = $2`
+	_, err := r.db.ExecContext(ctx, query, tableID, guestID)
+	return err
+}
+
 func (r *guestRepo) Update(ctx context.Context, g *domain.Guest) error {
 	query := `
 		UPDATE guests SET

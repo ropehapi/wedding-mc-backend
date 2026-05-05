@@ -59,6 +59,7 @@ func main() {
 	weddingRepo := repository.NewWeddingRepository(db)
 	guestRepo := repository.NewGuestRepository(db)
 	giftRepo := repository.NewGiftRepository(db)
+	tableRepo := repository.NewTableRepository(db)
 
 	// --- Services ---
 	authSvc := service.NewAuthService(userRepo, tokenRepo, cfg.JWTSecret, cfg.JWTExpiry, cfg.RefreshExpiry)
@@ -69,6 +70,7 @@ func main() {
 	weddingSvc := service.NewWeddingService(weddingRepo, storageSvc)
 	guestSvc := service.NewGuestService(guestRepo, weddingRepo)
 	giftSvc := service.NewGiftService(giftRepo, weddingRepo)
+	tableSvc := service.NewTableService(tableRepo, guestRepo, weddingRepo)
 
 	// --- Handlers ---
 	authHandler := handler.NewAuthHandler(authSvc)
@@ -76,6 +78,7 @@ func main() {
 	guestHandler := handler.NewGuestHandler(guestSvc)
 	giftHandler := handler.NewGiftHandler(giftSvc)
 	publicHandler := handler.NewPublicHandler(weddingSvc, guestSvc, giftSvc)
+	tableHandler := handler.NewTableHandler(tableSvc)
 
 	// --- Router ---
 	r := chi.NewRouter()
@@ -85,7 +88,7 @@ func main() {
 	r.Use(middleware.Recoverer(logger))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{cfg.AllowedOrigins},
-		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 	}))
@@ -134,6 +137,17 @@ func main() {
 			r.Patch("/{giftID}", giftHandler.Update)
 			r.Delete("/{giftID}", giftHandler.Delete)
 			r.Delete("/{giftID}/reserve", giftHandler.CancelReserve)
+		})
+
+		// Tables — protected
+		r.Route("/tables", func(r chi.Router) {
+			r.Use(middleware.Auth(cfg.JWTSecret))
+			r.Post("/", tableHandler.Create)
+			r.Get("/", tableHandler.List)
+			r.Patch("/{tableID}", tableHandler.Update)
+			r.Delete("/{tableID}", tableHandler.Delete)
+			r.Put("/{tableID}/guests/{guestID}", tableHandler.AssignGuest)
+			r.Delete("/{tableID}/guests/{guestID}", tableHandler.UnassignGuest)
 		})
 
 		// Public — no auth

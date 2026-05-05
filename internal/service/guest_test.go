@@ -27,6 +27,8 @@ type mockGuestRepo struct {
 
 	countResult map[domain.RSVPStatus]int
 	countErr    error
+
+	updateTableIDErr error
 }
 
 func (m *mockGuestRepo) Create(_ context.Context, g *domain.Guest) error {
@@ -60,6 +62,14 @@ func (m *mockGuestRepo) Delete(_ context.Context, _ string) error {
 
 func (m *mockGuestRepo) CountByStatus(_ context.Context, _ string) (map[domain.RSVPStatus]int, error) {
 	return m.countResult, m.countErr
+}
+
+func (m *mockGuestRepo) FindByAccessCode(_ context.Context, _, _ string) (*domain.Guest, error) {
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockGuestRepo) UpdateTableID(_ context.Context, _ string, _ *string) error {
+	return m.updateTableIDErr
 }
 
 func newTestGuestService(guests *mockGuestRepo, weddings *mockWeddingRepo) GuestService {

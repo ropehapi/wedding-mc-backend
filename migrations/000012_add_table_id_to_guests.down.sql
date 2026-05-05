@@ -1,0 +1,1 @@
+ALTER TABLE guests DROP COLUMN IF EXISTS table_id;
