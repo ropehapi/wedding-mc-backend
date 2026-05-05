@@ -1,0 +1,68 @@
+meta {
+  name: Listar mesas
+  type: http
+  seq: 2
+  tags: [
+    tables
+  ]
+}
+
+get {
+  url: {{baseUrl}}/v1/tables
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+example {
+  name: 200 Response
+  description: OK
+
+  request: {
+    url: {{baseUrl}}/v1/tables
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Unauthorized
+
+  request: {
+    url: {{baseUrl}}/v1/tables
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}

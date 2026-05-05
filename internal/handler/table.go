@@ -58,6 +58,18 @@ type listTablesResponse struct {
 
 // --- Handlers ---
 
+// Create godoc
+// @Summary Criar mesa
+// @Tags tables
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body createTableRequest true "Dados da mesa"
+// @Success 201 {object} tableResponse
+// @Failure 401 {object} errorEnvelope
+// @Failure 404 {object} errorEnvelope
+// @Failure 422 {object} validationEnvelope
+// @Router /v1/tables [post]
 func (h *TableHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -87,6 +99,15 @@ func (h *TableHandler) Create(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusCreated, toTableResponse(t))
 }
 
+// List godoc
+// @Summary Listar mesas
+// @Tags tables
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} listTablesResponse
+// @Failure 401 {object} errorEnvelope
+// @Failure 404 {object} errorEnvelope
+// @Router /v1/tables [get]
 func (h *TableHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -114,6 +135,19 @@ func (h *TableHandler) List(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, resp)
 }
 
+// Update godoc
+// @Summary Atualizar mesa
+// @Tags tables
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param tableID path string true "ID da mesa"
+// @Param body body updateTableRequest true "Campos a atualizar"
+// @Success 200 {object} tableResponse
+// @Failure 401 {object} errorEnvelope
+// @Failure 404 {object} errorEnvelope
+// @Failure 422 {object} validationEnvelope
+// @Router /v1/tables/{tableID} [patch]
 func (h *TableHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -145,6 +179,15 @@ func (h *TableHandler) Update(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, toTableResponse(t))
 }
 
+// Delete godoc
+// @Summary Remover mesa
+// @Tags tables
+// @Security BearerAuth
+// @Param tableID path string true "ID da mesa"
+// @Success 204
+// @Failure 401 {object} errorEnvelope
+// @Failure 404 {object} errorEnvelope
+// @Router /v1/tables/{tableID} [delete]
 func (h *TableHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -162,6 +205,17 @@ func (h *TableHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	NoContent(w)
 }
 
+// AssignGuest godoc
+// @Summary Alocar convidado na mesa
+// @Tags tables
+// @Security BearerAuth
+// @Param tableID path string true "ID da mesa"
+// @Param guestID path string true "ID do convidado"
+// @Success 200
+// @Failure 401 {object} errorEnvelope
+// @Failure 404 {object} errorEnvelope
+// @Failure 409 {object} errorEnvelope
+// @Router /v1/tables/{tableID}/guests/{guestID} [put]
 func (h *TableHandler) AssignGuest(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -180,6 +234,16 @@ func (h *TableHandler) AssignGuest(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, map[string]string{"status": "assigned"})
 }
 
+// UnassignGuest godoc
+// @Summary Remover convidado da mesa
+// @Tags tables
+// @Security BearerAuth
+// @Param tableID path string true "ID da mesa"
+// @Param guestID path string true "ID do convidado"
+// @Success 204
+// @Failure 401 {object} errorEnvelope
+// @Failure 404 {object} errorEnvelope
+// @Router /v1/tables/{tableID}/guests/{guestID} [delete]
 func (h *TableHandler) UnassignGuest(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {

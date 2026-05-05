@@ -1,0 +1,100 @@
+meta {
+  name: Criar mesa
+  type: http
+  seq: 1
+  tags: [
+    tables
+  ]
+}
+
+post {
+  url: {{baseUrl}}/v1/tables
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Mesa 1",
+    "capacity": 8
+  }
+}
+
+example {
+  name: 201 Response
+  description: Created
+
+  request: {
+    url: {{baseUrl}}/v1/tables
+    method: POST
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 201
+      text: Created
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Unauthorized
+
+  request: {
+    url: {{baseUrl}}/v1/tables
+    method: POST
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 Response
+  description: Unprocessable Entity
+
+  request: {
+    url: {{baseUrl}}/v1/tables
+    method: POST
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}

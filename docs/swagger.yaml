@@ -22,6 +22,17 @@ definitions:
     required:
     - name
     type: object
+  handler.createTableRequest:
+    properties:
+      capacity:
+        minimum: 1
+        type: integer
+      name:
+        type: string
+    required:
+    - capacity
+    - name
+    type: object
   handler.createWeddingRequest:
     properties:
       bride_name:
@@ -94,6 +105,8 @@ definitions:
     type: object
   handler.guestResponse:
     properties:
+      access_code:
+        type: string
       created_at:
         type: string
       id:
@@ -138,6 +151,17 @@ definitions:
         type: integer
       url:
         type: string
+    type: object
+  handler.listTablesResponse:
+    properties:
+      tables:
+        items:
+          $ref: '#/definitions/handler.tableResponse'
+        type: array
+      unassigned:
+        items:
+          $ref: '#/definitions/handler.tableGuestResponse'
+        type: array
     type: object
   handler.loginRequest:
     properties:
@@ -202,6 +226,8 @@ definitions:
         type: string
       id:
         type: string
+      is_cover:
+        type: boolean
       url:
         type: string
     type: object
@@ -294,20 +320,62 @@ definitions:
     type: object
   handler.reserveGiftRequest:
     properties:
-      guest_name:
+      access_code:
+        type: string
+      guest_id:
         type: string
     required:
-    - guest_name
+    - access_code
+    - guest_id
     type: object
   handler.rsvpRequest:
     properties:
+      access_code:
+        type: string
       status:
         enum:
         - confirmed
         - declined
         type: string
     required:
+    - access_code
     - status
+    type: object
+  handler.tableGuestResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.tableResponse:
+    properties:
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      guests:
+        items:
+          $ref: '#/definitions/handler.tableGuestResponse'
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      occupied:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  handler.updateTableRequest:
+    properties:
+      capacity:
+        minimum: 1
+        type: integer
+      name:
+        type: string
     type: object
   handler.userResponse:
     properties:
@@ -319,6 +387,13 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  handler.validateCodeRequest:
+    properties:
+      access_code:
+        type: string
+    required:
+    - access_code
     type: object
   handler.validationDetail:
     properties:
@@ -939,6 +1014,220 @@ paths:
       summary: Confirmar/recusar presença
       tags:
       - public
+  /v1/public/{slug}/guests/validate-code:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Slug do casamento
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Código de acesso
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.validateCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.publicGuestResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+      summary: Valida o código de acesso de um convidado
+      tags:
+      - public
+  /v1/tables:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.listTablesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar mesas
+      tags:
+      - tables
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Dados da mesa
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createTableRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.tableResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handler.validationEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Criar mesa
+      tags:
+      - tables
+  /v1/tables/{tableID}:
+    delete:
+      parameters:
+      - description: ID da mesa
+        in: path
+        name: tableID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Remover mesa
+      tags:
+      - tables
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID da mesa
+        in: path
+        name: tableID
+        required: true
+        type: string
+      - description: Campos a atualizar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateTableRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.tableResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handler.validationEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Atualizar mesa
+      tags:
+      - tables
+  /v1/tables/{tableID}/guests/{guestID}:
+    delete:
+      parameters:
+      - description: ID da mesa
+        in: path
+        name: tableID
+        required: true
+        type: string
+      - description: ID do convidado
+        in: path
+        name: guestID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Remover convidado da mesa
+      tags:
+      - tables
+    put:
+      parameters:
+      - description: ID da mesa
+        in: path
+        name: tableID
+        required: true
+        type: string
+      - description: ID do convidado
+        in: path
+        name: guestID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Alocar convidado na mesa
+      tags:
+      - tables
   /v1/wedding:
     get:
       produces:
@@ -1081,6 +1370,30 @@ paths:
       security:
       - BearerAuth: []
       summary: Remover foto
+      tags:
+      - wedding
+  /v1/wedding/photos/{photoID}/cover:
+    patch:
+      parameters:
+      - description: ID da foto
+        in: path
+        name: photoID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Definir foto principal
       tags:
       - wedding
 securityDefinitions:

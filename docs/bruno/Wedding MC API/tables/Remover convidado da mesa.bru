@@ -1,0 +1,110 @@
+meta {
+  name: Remover convidado da mesa
+  type: http
+  seq: 6
+  tags: [
+    tables
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/v1/tables/:tableID/guests/:guestID
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:path {
+  tableID:
+  guestID:
+}
+
+example {
+  name: 204 Response
+  description: No Content
+
+  request: {
+    url: {{baseUrl}}/v1/tables/:tableID/guests/:guestID
+    method: DELETE
+    mode: none
+    params:path: {
+      tableID:
+      guestID:
+    }
+  }
+
+  response: {
+    status: {
+      code: 204
+      text: No Content
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Unauthorized
+
+  request: {
+    url: {{baseUrl}}/v1/tables/:tableID/guests/:guestID
+    method: DELETE
+    mode: none
+    params:path: {
+      tableID:
+      guestID:
+    }
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Response
+  description: Not Found
+
+  request: {
+    url: {{baseUrl}}/v1/tables/:tableID/guests/:guestID
+    method: DELETE
+    mode: none
+    params:path: {
+      tableID:
+      guestID:
+    }
+  }
+
+  response: {
+    status: {
+      code: 404
+      text: Not Found
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
