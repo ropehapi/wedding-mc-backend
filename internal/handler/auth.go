@@ -19,6 +19,9 @@ type authServicer interface {
 	Login(ctx context.Context, email, password string) (*service.LoginResult, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*service.RefreshResult, error)
 	Logout(ctx context.Context, userID string) error
+	ForgotPassword(ctx context.Context, email string) error
+	ResetPassword(ctx context.Context, token, newPassword string) error
+	ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error
 }
 
 // AuthHandler handles HTTP requests for authentication endpoints.
@@ -67,6 +70,20 @@ type refreshRequest struct {
 type refreshResponse struct {
 	AccessToken string `json:"access_token"`
 	ExpiresAt   string `json:"expires_at"`
+}
+
+type forgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type resetPasswordRequest struct {
+	Token       string `json:"token"        validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,min=8"`
+}
+
+type changePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password"     validate:"required,min=8"`
 }
 
 // --- Handlers ---
@@ -198,6 +215,108 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.svc.Logout(r.Context(), userID); err != nil {
+		h.handleError(w, r, err)
+		return
+	}
+
+	NoContent(w)
+}
+
+// ForgotPassword godoc
+// @Summary Solicitar recuperação de senha
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body forgotPasswordRequest true "E-mail do usuário"
+// @Success 204
+// @Failure 422 {object} validationEnvelope
+// @Router /v1/auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req forgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		Error(w, http.StatusBadRequest, "bad_request", "invalid JSON body")
+		return
+	}
+	if errs := h.validate.Struct(req); errs != nil {
+		var ve validator.ValidationErrors
+		if errors.As(errs, &ve) {
+			ValidationError(w, ve)
+			return
+		}
+	}
+
+	if err := h.svc.ForgotPassword(r.Context(), req.Email); err != nil {
+		h.handleError(w, r, err)
+		return
+	}
+
+	NoContent(w)
+}
+
+// ResetPassword godoc
+// @Summary Redefinir senha com token de recuperação
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body resetPasswordRequest true "Token e nova senha"
+// @Success 204
+// @Failure 401 {object} errorEnvelope
+// @Failure 422 {object} validationEnvelope
+// @Router /v1/auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req resetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		Error(w, http.StatusBadRequest, "bad_request", "invalid JSON body")
+		return
+	}
+	if errs := h.validate.Struct(req); errs != nil {
+		var ve validator.ValidationErrors
+		if errors.As(errs, &ve) {
+			ValidationError(w, ve)
+			return
+		}
+	}
+
+	if err := h.svc.ResetPassword(r.Context(), req.Token, req.NewPassword); err != nil {
+		h.handleError(w, r, err)
+		return
+	}
+
+	NoContent(w)
+}
+
+// ChangePassword godoc
+// @Summary Alterar senha (autenticado)
+// @Tags auth
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body changePasswordRequest true "Senha atual e nova senha"
+// @Success 204
+// @Failure 401 {object} errorEnvelope
+// @Failure 422 {object} validationEnvelope
+// @Router /v1/auth/change-password [post]
+func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		Error(w, http.StatusUnauthorized, "unauthorized", "authentication required")
+		return
+	}
+
+	var req changePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		Error(w, http.StatusBadRequest, "bad_request", "invalid JSON body")
+		return
+	}
+	if errs := h.validate.Struct(req); errs != nil {
+		var ve validator.ValidationErrors
+		if errors.As(errs, &ve) {
+			ValidationError(w, ve)
+			return
+		}
+	}
+
+	if err := h.svc.ChangePassword(r.Context(), userID, req.CurrentPassword, req.NewPassword); err != nil {
 		h.handleError(w, r, err)
 		return
 	}

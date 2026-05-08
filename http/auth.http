@@ -44,6 +44,41 @@ POST {{baseUrl}}/v1/auth/logout
 Authorization: Bearer {{token}}
 
 
+### 5. Solicitar recuperação de senha
+# Gera um token de reset e o exibe no log do servidor (mailer de log).
+# Em produção, o link seria enviado por e-mail.
+POST {{baseUrl}}/v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "ana@email.com"
+}
+
+
+### 6. Redefinir senha com token
+# Cole o token exibido no log do servidor no campo "token".
+# Após o uso, o token fica inválido e todas as sessões são revogadas.
+POST {{baseUrl}}/v1/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "COLE_O_TOKEN_AQUI",
+  "new_password": "novaSenha123"
+}
+
+
+### 7. Alterar senha (autenticado)
+# Requer o JWT válido. Verifica a senha atual antes de alterar.
+POST {{baseUrl}}/v1/auth/change-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "current_password": "senha123",
+  "new_password": "novaSenha123"
+}
+
+
 ### --- Cenários de erro ---
 
 ### Registro com e-mail duplicado → 409

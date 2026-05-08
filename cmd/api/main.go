@@ -56,6 +56,7 @@ func main() {
 	// --- Repositories ---
 	userRepo := repository.NewUserRepository(db)
 	tokenRepo := repository.NewRefreshTokenRepository(db)
+	resetTokenRepo := repository.NewPasswordResetTokenRepository(db)
 	weddingRepo := repository.NewWeddingRepository(db)
 	guestRepo := repository.NewGuestRepository(db)
 	giftRepo := repository.NewGiftRepository(db)
@@ -64,9 +65,10 @@ func main() {
 	// --- Services ---
 	baseURL := fmt.Sprintf("http://localhost:%s/uploads", cfg.Port)
 	storageSvc := service.NewLocalStorage(cfg.LocalStoragePath, baseURL)
+	mailer := service.NewLogMailer(cfg.FrontendURL)
 
 	weddingSvc := service.NewWeddingService(weddingRepo, storageSvc)
-	authSvc := service.NewAuthService(userRepo, tokenRepo, weddingSvc, cfg.JWTSecret, cfg.JWTExpiry, cfg.RefreshExpiry)
+	authSvc := service.NewAuthService(userRepo, tokenRepo, resetTokenRepo, weddingSvc, mailer, cfg.JWTSecret, cfg.JWTExpiry, cfg.RefreshExpiry, cfg.ResetTokenExpiry)
 	guestSvc := service.NewGuestService(guestRepo, weddingRepo)
 	giftSvc := service.NewGiftService(giftRepo, weddingRepo)
 	tableSvc := service.NewTableService(tableRepo, guestRepo, weddingRepo)
@@ -103,7 +105,10 @@ func main() {
 			r.Post("/register", authHandler.Register)
 			r.Post("/login", authHandler.Login)
 			r.Post("/refresh", authHandler.Refresh)
+			r.Post("/forgot-password", authHandler.ForgotPassword)
+			r.Post("/reset-password", authHandler.ResetPassword)
 			r.With(middleware.Auth(cfg.JWTSecret)).Post("/logout", authHandler.Logout)
+			r.With(middleware.Auth(cfg.JWTSecret)).Post("/change-password", authHandler.ChangePassword)
 		})
 
 		// Wedding — protected

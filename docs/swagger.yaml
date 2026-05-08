@@ -1,5 +1,16 @@
 basePath: /
 definitions:
+  handler.changePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
   handler.createGiftRequest:
     properties:
       description:
@@ -68,6 +79,13 @@ definitions:
         type: string
       message:
         type: string
+    type: object
+  handler.forgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
     type: object
   handler.giftResponse:
     properties:
@@ -334,6 +352,17 @@ definitions:
     - access_code
     - guest_id
     type: object
+  handler.resetPasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
   handler.rsvpRequest:
     properties:
       access_code:
@@ -459,6 +488,58 @@ info:
   title: Wedding MC API
   version: "1.0"
 paths:
+  /v1/auth/change-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Senha atual e nova senha
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.changePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handler.validationEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Alterar senha (autenticado)
+      tags:
+      - auth
+  /v1/auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: E-mail do usuário
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.forgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handler.validationEnvelope'
+      summary: Solicitar recuperação de senha
+      tags:
+      - auth
   /v1/auth/login:
     post:
       consumes:
@@ -550,6 +631,33 @@ paths:
           schema:
             $ref: '#/definitions/handler.validationEnvelope'
       summary: Registrar casal
+      tags:
+      - auth
+  /v1/auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Token e nova senha
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.resetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorEnvelope'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handler.validationEnvelope'
+      summary: Redefinir senha com token de recuperação
       tags:
       - auth
   /v1/gifts:

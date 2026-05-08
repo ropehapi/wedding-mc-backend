@@ -13,13 +13,14 @@ import (
 )
 
 const (
-	testSecret        = "test-jwt-secret"
-	testJWTExpiry     = time.Hour
-	testRefreshExpiry = 168 * time.Hour
+	testSecret           = "test-jwt-secret"
+	testJWTExpiry        = time.Hour
+	testRefreshExpiry    = 168 * time.Hour
+	testResetTokenExpiry = time.Hour
 )
 
 func newTestAuthService(users *mockUserRepo, tokens *mockTokenRepo) AuthService {
-	return NewAuthService(users, tokens, &mockWeddingService{}, testSecret, testJWTExpiry, testRefreshExpiry)
+	return NewAuthService(users, tokens, &mockResetTokenRepo{}, &mockWeddingService{}, &mockMailer{}, testSecret, testJWTExpiry, testRefreshExpiry, testResetTokenExpiry)
 }
 
 func hashedPassword(t *testing.T, pw string) string {

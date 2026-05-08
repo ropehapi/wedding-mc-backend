@@ -20,6 +20,9 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (*LoginResult, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*RefreshResult, error)
 	Logout(ctx context.Context, userID string) error
+	ForgotPassword(ctx context.Context, email string) error
+	ResetPassword(ctx context.Context, token, newPassword string) error
+	ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error
 }
 
 // LoginResult holds the tokens returned after a successful login.
@@ -36,30 +39,39 @@ type RefreshResult struct {
 }
 
 type authService struct {
-	users         domain.UserRepository
-	tokens        domain.RefreshTokenRepository
-	weddings      WeddingService
-	jwtSecret     string
-	jwtExpiry     time.Duration
-	refreshExpiry time.Duration
+	users              domain.UserRepository
+	tokens             domain.RefreshTokenRepository
+	resetTokens        domain.PasswordResetTokenRepository
+	weddings           WeddingService
+	mailer             Mailer
+	jwtSecret          string
+	jwtExpiry          time.Duration
+	refreshExpiry      time.Duration
+	resetTokenExpiry   time.Duration
 }
 
 // NewAuthService creates a new AuthService with the given dependencies.
 func NewAuthService(
 	users domain.UserRepository,
 	tokens domain.RefreshTokenRepository,
+	resetTokens domain.PasswordResetTokenRepository,
 	weddings WeddingService,
+	mailer Mailer,
 	jwtSecret string,
 	jwtExpiry time.Duration,
 	refreshExpiry time.Duration,
+	resetTokenExpiry time.Duration,
 ) AuthService {
 	return &authService{
-		users:         users,
-		tokens:        tokens,
-		weddings:      weddings,
-		jwtSecret:     jwtSecret,
-		jwtExpiry:     jwtExpiry,
-		refreshExpiry: refreshExpiry,
+		users:            users,
+		tokens:           tokens,
+		resetTokens:      resetTokens,
+		weddings:         weddings,
+		mailer:           mailer,
+		jwtSecret:        jwtSecret,
+		jwtExpiry:        jwtExpiry,
+		refreshExpiry:    refreshExpiry,
+		resetTokenExpiry: resetTokenExpiry,
 	}
 }
 
@@ -195,4 +207,85 @@ func generateRefreshToken() (raw, hash string, err error) {
 func hashToken(raw string) string {
 	sum := sha256.Sum256([]byte(raw))
 	return base64.RawURLEncoding.EncodeToString(sum[:])
+}
+
+func (s *authService) ForgotPassword(ctx context.Context, email string) error {
+	u, err := s.users.FindByEmail(ctx, email)
+	if errors.Is(err, domain.ErrNotFound) {
+		// Respond silently to prevent email enumeration.
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	raw, hash, err := generateRefreshToken()
+	if err != nil {
+		return fmt.Errorf("generate reset token: %w", err)
+	}
+
+	t := &domain.PasswordResetToken{
+		UserID:    u.ID,
+		TokenHash: hash,
+		ExpiresAt: time.Now().Add(s.resetTokenExpiry),
+	}
+	if err := s.resetTokens.Create(ctx, t); err != nil {
+		return fmt.Errorf("store reset token: %w", err)
+	}
+
+	return s.mailer.SendPasswordReset(ctx, u.Email, raw)
+}
+
+func (s *authService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	if len(newPassword) < 8 {
+		return fmt.Errorf("%w: password must be at least 8 characters", domain.ErrValidation)
+	}
+
+	hash := hashToken(token)
+	t, err := s.resetTokens.FindByHash(ctx, hash)
+	if errors.Is(err, domain.ErrNotFound) {
+		return domain.ErrUnauthorized
+	}
+	if err != nil {
+		return err
+	}
+	if t.UsedAt != nil || time.Now().After(t.ExpiresAt) {
+		return domain.ErrUnauthorized
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	if err := s.users.UpdatePassword(ctx, t.UserID, string(passwordHash)); err != nil {
+		return err
+	}
+	if err := s.resetTokens.MarkUsed(ctx, t.ID); err != nil {
+		return fmt.Errorf("mark token used: %w", err)
+	}
+	// Revoke all refresh tokens so existing sessions are invalidated.
+	return s.tokens.RevokeByUserID(ctx, t.UserID)
+}
+
+func (s *authService) ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error {
+	if len(newPassword) < 8 {
+		return fmt.Errorf("%w: password must be at least 8 characters", domain.ErrValidation)
+	}
+
+	u, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(currentPassword)); err != nil {
+		return domain.ErrUnauthorized
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	return s.users.UpdatePassword(ctx, userID, string(passwordHash))
 }

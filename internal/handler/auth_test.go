@@ -39,6 +39,9 @@ func (m *mockAuthService) RefreshToken(_ context.Context, _ string) (*service.Re
 func (m *mockAuthService) Logout(_ context.Context, _ string) error {
 	return m.logoutErr
 }
+func (m *mockAuthService) ForgotPassword(_ context.Context, _ string) error        { return nil }
+func (m *mockAuthService) ResetPassword(_ context.Context, _, _ string) error      { return nil }
+func (m *mockAuthService) ChangePassword(_ context.Context, _, _, _ string) error  { return nil }
 
 // helpers
 

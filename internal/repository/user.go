@@ -59,3 +59,18 @@ func (r *userRepo) FindByID(ctx context.Context, id string) (*domain.User, error
 	}
 	return &u, nil
 }
+
+func (r *userRepo) UpdatePassword(ctx context.Context, userID, passwordHash string) error {
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+		passwordHash, userID,
+	)
+	if err != nil {
+		return err
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}

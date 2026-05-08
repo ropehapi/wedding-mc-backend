@@ -66,6 +66,8 @@ func (m *mockUserRepo) FindByID(_ context.Context, _ string) (*domain.User, erro
 	return m.findByID, m.findIDErr
 }
 
+func (m *mockUserRepo) UpdatePassword(_ context.Context, _, _ string) error { return nil }
+
 // mockTokenRepo is a test double for domain.RefreshTokenRepository.
 type mockTokenRepo struct {
 	createErr      error
@@ -90,4 +92,33 @@ func (m *mockTokenRepo) FindByHash(_ context.Context, _ string) (*domain.Refresh
 func (m *mockTokenRepo) RevokeByUserID(_ context.Context, userID string) error {
 	m.revokedUserID = userID
 	return m.revokeErr
+}
+
+// mockResetTokenRepo is a test double for domain.PasswordResetTokenRepository.
+type mockResetTokenRepo struct {
+	findByHash    *domain.PasswordResetToken
+	findByHashErr error
+}
+
+func (m *mockResetTokenRepo) Create(_ context.Context, t *domain.PasswordResetToken) error {
+	t.ID = "reset-token-id-789"
+	return nil
+}
+
+func (m *mockResetTokenRepo) FindByHash(_ context.Context, _ string) (*domain.PasswordResetToken, error) {
+	return m.findByHash, m.findByHashErr
+}
+
+func (m *mockResetTokenRepo) MarkUsed(_ context.Context, _ string) error { return nil }
+
+// mockMailer is a test double for Mailer.
+type mockMailer struct {
+	sentTo    string
+	sentToken string
+}
+
+func (m *mockMailer) SendPasswordReset(_ context.Context, toEmail, token string) error {
+	m.sentTo = toEmail
+	m.sentToken = token
+	return nil
 }

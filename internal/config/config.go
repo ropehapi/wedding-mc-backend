@@ -9,16 +9,18 @@ import (
 )
 
 type Config struct {
-	DatabaseURL      string
-	JWTSecret        string
-	JWTExpiry        time.Duration
-	RefreshExpiry    time.Duration
-	StorageDriver    string
-	LocalStoragePath string
-	S3Bucket         string
-	S3Region         string
-	Port             string
-	AllowedOrigins   string
+	DatabaseURL        string
+	JWTSecret          string
+	JWTExpiry          time.Duration
+	RefreshExpiry      time.Duration
+	ResetTokenExpiry   time.Duration
+	FrontendURL        string
+	StorageDriver      string
+	LocalStoragePath   string
+	S3Bucket           string
+	S3Region           string
+	Port               string
+	AllowedOrigins     string
 }
 
 func Load() (*Config, error) {
@@ -27,6 +29,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		DatabaseURL:      os.Getenv("DATABASE_URL"),
 		JWTSecret:        os.Getenv("JWT_SECRET"),
+		FrontendURL:      getEnvDefault("FRONTEND_URL", "http://localhost:3000"),
 		StorageDriver:    getEnvDefault("STORAGE_DRIVER", "local"),
 		LocalStoragePath: getEnvDefault("LOCAL_STORAGE_PATH", "./uploads"),
 		S3Bucket:         os.Getenv("S3_BUCKET"),
@@ -53,6 +56,12 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid REFRESH_EXPIRY: %w", err)
 	}
 	cfg.RefreshExpiry = refreshExpiry
+
+	resetTokenExpiry, err := parseDurationDefault("RESET_TOKEN_EXPIRY", time.Hour)
+	if err != nil {
+		return nil, fmt.Errorf("invalid RESET_TOKEN_EXPIRY: %w", err)
+	}
+	cfg.ResetTokenExpiry = resetTokenExpiry
 
 	if cfg.StorageDriver != "local" && cfg.StorageDriver != "s3" {
 		return nil, fmt.Errorf("STORAGE_DRIVER must be 'local' or 's3', got %q", cfg.StorageDriver)
