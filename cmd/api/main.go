@@ -65,7 +65,12 @@ func main() {
 	// --- Services ---
 	baseURL := fmt.Sprintf("http://localhost:%s/uploads", cfg.Port)
 	storageSvc := service.NewLocalStorage(cfg.LocalStoragePath, baseURL)
-	mailer := service.NewLogMailer(cfg.FrontendURL)
+	var mailer service.Mailer
+	if cfg.SMTPHost != "" {
+		mailer = service.NewSmtpMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPFrom, cfg.FrontendURL)
+	} else {
+		mailer = service.NewLogMailer(cfg.FrontendURL)
+	}
 
 	weddingSvc := service.NewWeddingService(weddingRepo, storageSvc)
 	authSvc := service.NewAuthService(userRepo, tokenRepo, resetTokenRepo, weddingSvc, mailer, cfg.JWTSecret, cfg.JWTExpiry, cfg.RefreshExpiry, cfg.ResetTokenExpiry)

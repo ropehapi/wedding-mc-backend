@@ -21,6 +21,11 @@ type Config struct {
 	S3Region           string
 	Port               string
 	AllowedOrigins     string
+	SMTPHost           string
+	SMTPPort           string
+	SMTPUsername       string
+	SMTPPassword       string
+	SMTPFrom           string
 }
 
 func Load() (*Config, error) {
@@ -36,6 +41,11 @@ func Load() (*Config, error) {
 		S3Region:         os.Getenv("S3_REGION"),
 		Port:             getEnvDefault("PORT", "8080"),
 		AllowedOrigins:   getEnvDefault("ALLOWED_ORIGINS", "*"),
+		SMTPHost:         os.Getenv("SMTP_HOST"),
+		SMTPPort:         getEnvDefault("SMTP_PORT", "587"),
+		SMTPUsername:     os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:     os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:         os.Getenv("SMTP_FROM"),
 	}
 
 	if cfg.DatabaseURL == "" {
