@@ -306,7 +306,11 @@ definitions:
     type: object
   handler.registerRequest:
     properties:
+      bride_name:
+        type: string
       email:
+        type: string
+      groom_name:
         type: string
       name:
         type: string
@@ -314,7 +318,9 @@ definitions:
         minLength: 8
         type: string
     required:
+    - bride_name
     - email
+    - groom_name
     - name
     - password
     type: object

@@ -1970,12 +1970,20 @@
         "handler.registerRequest": {
             "type": "object",
             "required": [
+                "bride_name",
                 "email",
+                "groom_name",
                 "name",
                 "password"
             ],
             "properties": {
+                "bride_name": {
+                    "type": "string"
+                },
                 "email": {
+                    "type": "string"
+                },
+                "groom_name": {
                     "type": "string"
                 },
                 "name": {

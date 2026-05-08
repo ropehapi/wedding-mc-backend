@@ -16,7 +16,7 @@ import (
 
 // AuthService defines the authentication business logic contract.
 type AuthService interface {
-	Register(ctx context.Context, name, email, password string) (*domain.User, error)
+	Register(ctx context.Context, name, email, password, brideName, groomName string) (*domain.User, error)
 	Login(ctx context.Context, email, password string) (*LoginResult, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*RefreshResult, error)
 	Logout(ctx context.Context, userID string) error
@@ -38,6 +38,7 @@ type RefreshResult struct {
 type authService struct {
 	users         domain.UserRepository
 	tokens        domain.RefreshTokenRepository
+	weddings      WeddingService
 	jwtSecret     string
 	jwtExpiry     time.Duration
 	refreshExpiry time.Duration
@@ -47,6 +48,7 @@ type authService struct {
 func NewAuthService(
 	users domain.UserRepository,
 	tokens domain.RefreshTokenRepository,
+	weddings WeddingService,
 	jwtSecret string,
 	jwtExpiry time.Duration,
 	refreshExpiry time.Duration,
@@ -54,13 +56,14 @@ func NewAuthService(
 	return &authService{
 		users:         users,
 		tokens:        tokens,
+		weddings:      weddings,
 		jwtSecret:     jwtSecret,
 		jwtExpiry:     jwtExpiry,
 		refreshExpiry: refreshExpiry,
 	}
 }
 
-func (s *authService) Register(ctx context.Context, name, email, password string) (*domain.User, error) {
+func (s *authService) Register(ctx context.Context, name, email, password, brideName, groomName string) (*domain.User, error) {
 	if len(password) < 8 {
 		return nil, fmt.Errorf("%w: password must be at least 8 characters", domain.ErrValidation)
 	}
@@ -78,6 +81,19 @@ func (s *authService) Register(ctx context.Context, name, email, password string
 	if err := s.users.Create(ctx, u); err != nil {
 		return nil, err
 	}
+
+	defaultDate := time.Now().AddDate(1, 0, 0)
+	defaultLocation := "A definir"
+	_, err = s.weddings.CreateWedding(ctx, u.ID, CreateWeddingRequest{
+		BrideName: brideName,
+		GroomName: groomName,
+		Date:      defaultDate,
+		Location:  defaultLocation,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create wedding: %w", err)
+	}
+
 	return u, nil
 }
 

@@ -19,7 +19,7 @@ const (
 )
 
 func newTestAuthService(users *mockUserRepo, tokens *mockTokenRepo) AuthService {
-	return NewAuthService(users, tokens, testSecret, testJWTExpiry, testRefreshExpiry)
+	return NewAuthService(users, tokens, &mockWeddingService{}, testSecret, testJWTExpiry, testRefreshExpiry)
 }
 
 func hashedPassword(t *testing.T, pw string) string {
@@ -37,7 +37,7 @@ func TestRegister_Success(t *testing.T) {
 	users := &mockUserRepo{}
 	svc := newTestAuthService(users, &mockTokenRepo{})
 
-	u, err := svc.Register(context.Background(), "Ana e João", "ana@email.com", "senha123")
+	u, err := svc.Register(context.Background(), "Ana e João", "ana@email.com", "senha123", "Ana", "João")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 	users := &mockUserRepo{createErr: domain.ErrConflict}
 	svc := newTestAuthService(users, &mockTokenRepo{})
 
-	_, err := svc.Register(context.Background(), "Ana", "ana@email.com", "senha123")
+	_, err := svc.Register(context.Background(), "Ana", "ana@email.com", "senha123", "Ana", "João")
 	if !errors.Is(err, domain.ErrConflict) {
 		t.Errorf("expected ErrConflict, got %v", err)
 	}
@@ -66,7 +66,7 @@ func TestRegister_WeakPassword(t *testing.T) {
 	users := &mockUserRepo{}
 	svc := newTestAuthService(users, &mockTokenRepo{})
 
-	_, err := svc.Register(context.Background(), "Ana", "ana@email.com", "short")
+	_, err := svc.Register(context.Background(), "Ana", "ana@email.com", "short", "Ana", "João")
 	if !errors.Is(err, domain.ErrValidation) {
 		t.Errorf("expected ErrValidation, got %v", err)
 	}

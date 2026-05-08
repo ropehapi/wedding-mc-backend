@@ -2,9 +2,41 @@ package service
 
 import (
 	"context"
+	"io"
 
 	"github.com/ropehapi/wedding-mc/internal/domain"
 )
+
+// mockWeddingService is a test double for WeddingService.
+type mockWeddingService struct {
+	createErr error
+	wedding   *domain.Wedding
+}
+
+func (m *mockWeddingService) CreateWedding(_ context.Context, _ string, _ CreateWeddingRequest) (*domain.Wedding, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
+	if m.wedding != nil {
+		return m.wedding, nil
+	}
+	return &domain.Wedding{ID: "wedding-id-123"}, nil
+}
+
+func (m *mockWeddingService) GetWedding(_ context.Context, _ string) (*domain.Wedding, error) {
+	return nil, domain.ErrNotFound
+}
+func (m *mockWeddingService) GetWeddingBySlug(_ context.Context, _ string) (*domain.Wedding, error) {
+	return nil, domain.ErrNotFound
+}
+func (m *mockWeddingService) UpdateWedding(_ context.Context, _ string, _ UpdateWeddingRequest) (*domain.Wedding, error) {
+	return nil, domain.ErrNotFound
+}
+func (m *mockWeddingService) UploadPhoto(_ context.Context, _, _ string, _ io.Reader, _ int64) (*domain.WeddingPhoto, error) {
+	return nil, domain.ErrNotFound
+}
+func (m *mockWeddingService) DeletePhoto(_ context.Context, _, _ string) error { return nil }
+func (m *mockWeddingService) SetCoverPhoto(_ context.Context, _, _ string) error { return nil }
 
 // mockUserRepo is a test double for domain.UserRepository.
 type mockUserRepo struct {

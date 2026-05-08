@@ -15,7 +15,7 @@ import (
 
 // authServicer is the subset of service.AuthService used by AuthHandler.
 type authServicer interface {
-	Register(ctx context.Context, name, email, password string) (*domain.User, error)
+	Register(ctx context.Context, name, email, password, brideName, groomName string) (*domain.User, error)
 	Login(ctx context.Context, email, password string) (*service.LoginResult, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*service.RefreshResult, error)
 	Logout(ctx context.Context, userID string) error
@@ -35,9 +35,11 @@ func NewAuthHandler(svc authServicer) *AuthHandler {
 // --- Request / Response types ---
 
 type registerRequest struct {
-	Name     string `json:"name"     validate:"required"`
-	Email    string `json:"email"    validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
+	Name      string `json:"name"       validate:"required"`
+	Email     string `json:"email"      validate:"required,email"`
+	Password  string `json:"password"   validate:"required,min=8"`
+	BrideName string `json:"bride_name" validate:"required"`
+	GroomName string `json:"groom_name" validate:"required"`
 }
 
 type userResponse struct {
@@ -94,7 +96,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	u, err := h.svc.Register(r.Context(), req.Name, req.Email, req.Password)
+	u, err := h.svc.Register(r.Context(), req.Name, req.Email, req.Password, req.BrideName, req.GroomName)
 	if err != nil {
 		h.handleError(w, r, err)
 		return

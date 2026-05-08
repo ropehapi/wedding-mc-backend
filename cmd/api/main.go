@@ -62,12 +62,11 @@ func main() {
 	tableRepo := repository.NewTableRepository(db)
 
 	// --- Services ---
-	authSvc := service.NewAuthService(userRepo, tokenRepo, cfg.JWTSecret, cfg.JWTExpiry, cfg.RefreshExpiry)
-
 	baseURL := fmt.Sprintf("http://localhost:%s/uploads", cfg.Port)
 	storageSvc := service.NewLocalStorage(cfg.LocalStoragePath, baseURL)
 
 	weddingSvc := service.NewWeddingService(weddingRepo, storageSvc)
+	authSvc := service.NewAuthService(userRepo, tokenRepo, weddingSvc, cfg.JWTSecret, cfg.JWTExpiry, cfg.RefreshExpiry)
 	guestSvc := service.NewGuestService(guestRepo, weddingRepo)
 	giftSvc := service.NewGiftService(giftRepo, weddingRepo)
 	tableSvc := service.NewTableService(tableRepo, guestRepo, weddingRepo)

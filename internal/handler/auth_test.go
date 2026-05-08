@@ -27,7 +27,7 @@ type mockAuthService struct {
 	logoutErr error
 }
 
-func (m *mockAuthService) Register(_ context.Context, _, _, _ string) (*domain.User, error) {
+func (m *mockAuthService) Register(_ context.Context, _, _, _, _, _ string) (*domain.User, error) {
 	return m.registerUser, m.registerErr
 }
 func (m *mockAuthService) Login(_ context.Context, _, _ string) (*service.LoginResult, error) {
@@ -64,7 +64,7 @@ func TestRegister_201(t *testing.T) {
 	}}
 	h := newAuthHandler(svc)
 
-	rec := postJSON(t, h.Register, `{"name":"Ana e João","email":"ana@email.com","password":"senha123"}`)
+	rec := postJSON(t, h.Register, `{"name":"Ana e João","email":"ana@email.com","password":"senha123","bride_name":"Ana","groom_name":"João"}`)
 
 	if rec.Code != http.StatusCreated {
 		t.Errorf("status: got %d, want 201", rec.Code)
@@ -91,7 +91,7 @@ func TestRegister_409_DuplicateEmail(t *testing.T) {
 	svc := &mockAuthService{registerErr: domain.ErrConflict}
 	h := newAuthHandler(svc)
 
-	rec := postJSON(t, h.Register, `{"name":"Ana","email":"ana@email.com","password":"senha123"}`)
+	rec := postJSON(t, h.Register, `{"name":"Ana","email":"ana@email.com","password":"senha123","bride_name":"Ana","groom_name":"João"}`)
 
 	if rec.Code != http.StatusConflict {
 		t.Errorf("status: got %d, want 409", rec.Code)
