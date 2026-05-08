@@ -1,0 +1,17 @@
+# Environment
+.env
+
+# Build output
+/bin/
+
+# Uploads (local storage)
+/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
